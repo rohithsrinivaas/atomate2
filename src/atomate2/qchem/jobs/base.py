@@ -12,6 +12,7 @@ from jobflow import Maker, Response, job
 from monty.serialization import dumpfn
 from monty.shutil import gzip_dir
 from pymatgen.io.qchem.inputs import QCInput
+from monty.io import zopen
 
 from atomate2.qchem.files import copy_qchem_outputs
 from atomate2.qchem.run import run_qchem, should_stop_children
@@ -145,8 +146,12 @@ class BaseQCMaker(Maker):
 
         # write any additional data
         for filename, data in self.write_additional_data.items():
-            dumpfn(data, filename.replace(":", "."))
-
+            if filename == 'solvent_data':
+                with zopen(filename.replace(":", "."), mode="wt") as file:
+                    file.write(data)
+            else:
+                dumpfn(str(data), filename.replace(":", "."))
+        
         # run qchem
         run_qchem(**self.run_qchem_kwargs)
 
